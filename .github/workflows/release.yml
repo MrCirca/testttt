@@ -5,6 +5,10 @@ on:
     tags:
       - "v*.*.*"  # We release on semver tags
 
+
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
