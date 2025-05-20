@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v1.3.4 - 2025-05-20
+
+
+
+- Update changelog
 ## v1.3.3 - 2025-05-20
 
 
