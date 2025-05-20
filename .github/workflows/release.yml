@@ -1,9 +1,9 @@
-name: Generate Changelog and Release
+name: Release on Tag Push
 
 on:
   push:
     tags:
-      - "v*.*.*"  # Trigger only on version tags
+      - "v*.*.*"
 
 permissions:
   contents: write
@@ -12,6 +12,7 @@ jobs:
   changelog:
     name: Generate changelog
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,16 +28,16 @@ jobs:
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog
+      - name: Generate changelog with git-cliff
         uses: orhun/git-cliff-action@v4
         with:
-          config: .cliff.toml
-          args: --output CHANGELOG.md --include-path CHANGELOG.md --verbose
+          config: cliff.toml
+          args: --tag ${{ env.TAG_NAME }} --output CHANGELOG.md --include-path CHANGELOG.md --verbose
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Commit
+      - name: Commit and push changelog
         run: |
           git checkout ${{ steps.detect_branch.outputs.default_branch }}
           git config user.name 'github-actions[bot]'
@@ -54,3 +55,4 @@ jobs:
             --generate-notes \
             --title "Release $TAG_NAME" \
             --repo ${{ github.repository }}
+
