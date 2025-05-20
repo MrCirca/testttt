@@ -32,7 +32,7 @@ jobs:
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --tag ${{ env.TAG_NAME }} --output CHANGELOG.md --include-path CHANGELOG.md --verbose
+          args: --verbose
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
