@@ -3,61 +3,55 @@ name: Release on Tag Push
 on:
   push:
     tags:
-      - "v*.*.*"  # Trigger only on tags like v1.2.3
+      - "v*.*.*"
 
 permissions:
-  contents: write  # Needed to commit and create release
+  contents: write
 
 jobs:
-  release:
+  changelog:
+    name: Generate changelog with git-cliff and release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required to access all history and tags
+          fetch-depth: 0  # Required for full git log
 
       - name: Extract tag name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Get previous tag
-        run: |
-          git fetch --tags
-          PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | grep -v "$TAG_NAME" | tail -n 1)
-          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
-
-      - name: Detect and checkout default branch
+      - name: Detect default branch and switch to it
         run: |
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
           git fetch origin $DEFAULT_BRANCH
-          git checkout -B $DEFAULT_BRANCH origin/$DEFAULT_BRANCH
+          git switch $DEFAULT_BRANCH
+          git reset --hard origin/$DEFAULT_BRANCH
 
-      - name: Prepend to existing CHANGELOG.md
-        run: |
-          DATE=$(date +'%Y-%m-%d')
-          echo "## $TAG_NAME - $DATE" > new_changes.txt
-          echo "" >> new_changes.txt
-          git log $PREV_TAG..HEAD --pretty=format:"- %s" >> new_changes.txt
-          echo "" >> new_changes.txt
-
-          touch CHANGELOG.md
-          cat new_changes.txt CHANGELOG.md > combined.txt && mv combined.txt CHANGELOG.md
+      - name: Generate changelog using git-cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --tag ${{ env.TAG_NAME }} --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
 
       - name: Commit and push updated CHANGELOG.md
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add CHANGELOG.md
-          git commit -m "docs: update changelog for $TAG_NAME"
-          git push origin $DEFAULT_BRANCH
+          git commit -m "docs: update changelog for $TAG_NAME [auto]"
+          git push origin HEAD
 
-      - name: Create GitHub Release with auto-generated notes
+      - name: Create GitHub Release with changelog notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create $TAG_NAME \
-            --generate-notes \
+            --notes-file CHANGELOG.md \
             --title "Release $TAG_NAME" \
             --repo ${{ github.repository }}
