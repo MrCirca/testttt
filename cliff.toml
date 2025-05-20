@@ -29,4 +29,7 @@ filter_commits = false
 filter_unconventional = false
 conventional_commits = false
 sort_commits = "oldest"
+commit_parsers = [
+    { message = "^Update changelog$", skip = true },
+]
 
