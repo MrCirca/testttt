@@ -3,32 +3,31 @@ name: Release on Tag Push
 on:
   push:
     tags:
-      - "v*.*.*"  # Only run on semver tags like v1.2.3
+      - "v*.*.*"  # Trigger only on tags like v1.2.3
 
 permissions:
-  contents: write  # Needed for committing and creating releases
+  contents: write  # Needed to commit and create release
 
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required to access all tags and commits
+          fetch-depth: 0
 
-      - name: Extract Tag Name
-        id: get_tag
+      - name: Extract tag name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Get Previous Tag
+      - name: Get previous tag
         run: |
           git fetch --tags
-          PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | sed -n '2p')
+          PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | grep -v "$TAG_NAME" | tail -n 1)
           echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
 
-      - name: Detect Default Branch and Check It Out
+      - name: Detect default branch and check it out
         run: |
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
@@ -36,28 +35,26 @@ jobs:
           git checkout $DEFAULT_BRANCH
           git reset --hard $GITHUB_SHA
 
-      - name: Generate and Prepend Changelog
+      - name: Prepend to existing CHANGELOG.md
         run: |
           DATE=$(date +'%Y-%m-%d')
-          REPO=${{ github.repository }}
-
-          echo "## What's new in $TAG_NAME - $DATE" > new_changes.txt
+          echo "## $TAG_NAME - $DATE" > new_changes.txt
           echo "" >> new_changes.txt
-          git log $PREV_TAG..HEAD --pretty=format:"- %s [%h](https://github.com/$REPO/commit/%h)" >> new_changes.txt
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" >> new_changes.txt
           echo "" >> new_changes.txt
 
-          touch CHANGELOG.md
+          # Προσθέτουμε στην αρχή του CHANGELOG.md
           cat new_changes.txt CHANGELOG.md > combined.txt && mv combined.txt CHANGELOG.md
 
-      - name: Commit and Push Updated Changelog
+      - name: Commit and push updated CHANGELOG.md
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add CHANGELOG.md
           git commit -m "docs: update changelog for $TAG_NAME"
-          git push origin main
+          git push origin $DEFAULT_BRANCH
 
-      - name: Create GitHub Release with Auto-Generated Notes
+      - name: Create GitHub Release with auto-generated notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
