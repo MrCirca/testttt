@@ -5,26 +5,57 @@ on:
     tags:
       - "v*.*.*"  # We release on semver tags
 
-
 permissions:
-  contents: write
+  contents: write  # για να μπορεί να κάνει commit & push στο CHANGELOG.md
 
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4  # Εναλλακτικά βάλε SHA
+        uses: actions/checkout@v4
 
       - name: Extract Tag Name
         id: get_tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
+      - name: Get Previous Tag
+        id: prev_tag
+        run: |
+          git fetch --tags
+          PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | sed -n '2p')
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
+
+      - name: Generate Changelog and Prepend to CHANGELOG.md
+        run: |
+          DATE=$(date +'%Y-%m-%d')
+          REPO=${{ github.repository }}
+
+          echo "## What's new in $TAG_NAME - $DATE" > new_changes.txt
+          echo "" >> new_changes.txt
+
+          # Εξάγουμε commit messages με PR link αν υπάρχει
+          git log $PREV_TAG..HEAD --pretty=format:"- %s [%h](https://github.com/$REPO/commit/%h)" >> new_changes.txt
+          echo "" >> new_changes.txt
+
+          # Δημιουργούμε ή ενημερώνουμε το CHANGELOG.md
+          touch CHANGELOG.md
+          cat new_changes.txt CHANGELOG.md > combined.txt && mv combined.txt CHANGELOG.md
+
+      - name: Commit Updated Changelog
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update changelog for $TAG_NAME"
+          git push
+
       - name: Create GitHub Release with Auto-Generated Notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ env.TAG_NAME }} \
+          gh release create $TAG_NAME \
             --generate-notes \
-            --title "Release ${{ env.TAG_NAME }}" \
+            --title "Release $TAG_NAME" \
             --repo ${{ github.repository }}
