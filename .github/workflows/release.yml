@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Required to access all history and tags
 
       - name: Extract tag name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
@@ -28,13 +28,11 @@ jobs:
           echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
 
       - name: Detect and checkout default branch
-        id: checkout_branch
         run: |
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
           git fetch origin $DEFAULT_BRANCH
-          git checkout $DEFAULT_BRANCH
-          git reset --hard origin/$DEFAULT_BRANCH
+          git checkout -B $DEFAULT_BRANCH origin/$DEFAULT_BRANCH
 
       - name: Prepend to existing CHANGELOG.md
         run: |
@@ -44,10 +42,10 @@ jobs:
           git log $PREV_TAG..HEAD --pretty=format:"- %s" >> new_changes.txt
           echo "" >> new_changes.txt
 
-          # Προσθέτουμε στην αρχή του CHANGELOG.md
+          touch CHANGELOG.md
           cat new_changes.txt CHANGELOG.md > combined.txt && mv combined.txt CHANGELOG.md
 
-      - name: Commit and push updated changelog
+      - name: Commit and push updated CHANGELOG.md
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
