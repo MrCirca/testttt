@@ -27,17 +27,10 @@ jobs:
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Create cliff config inline
-        run: |
-          cat <<EOF > cliff.toml
-          [git]
-          filter_unconventional = false
-          EOF
-          
       - name: Generate changelog
         uses: orhun/git-cliff-action@v4
         with:
-          config: cliff.toml
+          config: .cliff.toml
           args: --output CHANGELOG.md --include-path CHANGELOG.md --verbose
         env:
           OUTPUT: CHANGELOG.md
