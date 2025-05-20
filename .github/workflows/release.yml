@@ -27,13 +27,13 @@ jobs:
           PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | grep -v "$TAG_NAME" | tail -n 1)
           echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
 
-      - name: Detect default branch and check it out
+      - name: Detect and switch to default branch
+        id: checkout_branch
         run: |
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
           git fetch origin $DEFAULT_BRANCH
-          git checkout $DEFAULT_BRANCH
-          git reset --hard $GITHUB_SHA
+          git checkout -B $DEFAULT_BRANCH origin/$DEFAULT_BRANCH
 
       - name: Prepend to existing CHANGELOG.md
         run: |
