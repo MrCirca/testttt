@@ -1,57 +1,56 @@
-name: Release on Tag Push
+name: Generate Changelog and Release
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*.*.*"  # Trigger only on version tags
 
 permissions:
   contents: write
 
 jobs:
   changelog:
-    name: Generate changelog with git-cliff and release
+    name: Generate changelog
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for full git log
+          fetch-depth: 0
 
       - name: Extract tag name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Detect default branch and switch to it
+      - name: Detect default branch
+        id: detect_branch
         run: |
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
-          echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
-          git fetch origin $DEFAULT_BRANCH
-          git switch $DEFAULT_BRANCH
-          git reset --hard origin/$DEFAULT_BRANCH
+          echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog using git-cliff
+      - name: Generate changelog
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --tag ${{ env.TAG_NAME }} --verbose
+          args: --verbose
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Commit and push updated CHANGELOG.md
+      - name: Commit
         run: |
+          git checkout ${{ steps.detect_branch.outputs.default_branch }}
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
+          set +e
           git add CHANGELOG.md
-          git commit -m "docs: update changelog for $TAG_NAME [auto]"
-          git push origin HEAD
+          git commit -m "Update changelog"
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git ${{ steps.detect_branch.outputs.default_branch }}
 
-      - name: Create GitHub Release with changelog notes
+      - name: Create GitHub Release with generated notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create $TAG_NAME \
-            --notes-file CHANGELOG.md \
+            --generate-notes \
             --title "Release $TAG_NAME" \
             --repo ${{ github.repository }}
