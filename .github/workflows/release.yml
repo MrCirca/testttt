@@ -18,12 +18,14 @@ jobs:
           fetch-depth: 0
 
 
+      - name: Set up git-cliff
+        uses: kenji-miyake/setup-git-cliff@v1
+
       - name: Detect default branch
         id: detect_branch
         run: |
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d ':' -f2 | tr -d ' ')
           echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_OUTPUT
-
 
       - name: Bump release version
         id: new_tag
