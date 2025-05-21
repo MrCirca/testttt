@@ -1,4 +1,4 @@
-name: Generate Changelog on Merge
+name: Generate Changelog and Release Version on Merge
 
 on:
   push:
@@ -19,21 +19,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate changelog with git-cliff
-        uses: orhun/git-cliff-action@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          config: cliff.toml
-          args: --verbose
-        env:
-          OUTPUT: CHANGELOG.md
-          GITHUB_REPO: ${{ github.repository }}
+          fetch-depth: 0
 
-      - name: Commit and push changelog
+      - name: Set up git-cliff
+        uses: kenji-miyake/setup-git-cliff@v1
+
+      - name: Bump release version
+        id: new_tag
         run: |
-          git checkout ${{ steps.detect_branch.outputs.default_branch }}
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          set +e
-          git add CHANGELOG.md
-          git commit -m "Update changelog"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git ${{ steps.detect_branch.outputs.default_branch }}
+          VERSION=$(git cliff --config=cliff.toml --bumped-version)
+          echo "new_tag=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog for this version
+        run: |
+          git cliff --config=cliff.toml --tag ${{ steps.new_tag.outputs.new_tag }} > CHANGELOG.md
+
+      - name: Create GitHub Release with changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.new_tag.outputs.new_tag }} \
+            --title "Release ${{ steps.new_tag.outputs.new_tag }}" \
+            --notes-file CHANGELOG.md \
+            --repo ${{ github.repository }}
+
