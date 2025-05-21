@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 
 
 
+- FFFF
+## v1.6.0 - 2025-05-21
+
+
+
 - Ena duo
 
 - Test
