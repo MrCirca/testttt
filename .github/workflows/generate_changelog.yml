@@ -37,6 +37,16 @@ jobs:
         run: |
           git cliff --config=cliff.toml --tag ${{ steps.new_tag.outputs.new_tag }} > CHANGELOG.md
 
+      - name: Commit and push changelog
+        run: |
+          git checkout ${{ steps.detect_branch.outputs.default_branch }}
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          set +e
+          git add CHANGELOG.md
+          git commit -m "Update changelog"
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git ${{ steps.detect_branch.outputs.default_branch }}
+
       - name: Create GitHub Release with changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
