@@ -1,3 +1,5 @@
+name: Create Release
+
 on:
   workflow_run:
     workflows: ["Generate Changelog on Merge"]
@@ -23,22 +25,19 @@ jobs:
           echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_OUTPUT
 
 
-      - name: Bump new release with git-cliff
-        uses: orhun/git-cliff-action@v4
+      - name: Bump release version
         id: new_tag
-        with:
-          config: cliff.toml
-          args: --bumped-version
-        env:
-          OUTPUT: NEW_TAG
-          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(git cliff --config=cliff.toml --bumped-version)
+          echo "new_tag=$VERSION" >> $GITHUB_OUTPUT
+
 
       - name: Create GitHub Release with generated notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ steps.new_tag.outputs.NEW_TAG }} \
+          gh release create ${{ steps.new_tag.outputs.new_tag }} \
             --generate-notes \
-            --title "Release ${{ steps.new_tag.outputs.NEW_TAG }}" \
+            --title "Release ${{ steps.new_tag.outputs.new_tag }}" \
             --repo ${{ github.repository }}
 
