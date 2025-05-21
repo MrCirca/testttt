@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - Ena duo
 
 - Test
+
+- Feat: hehe
 ## v1.5.0 - 2025-05-20
 
 
