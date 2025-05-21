@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 - Testtttt
 
 - Twfewfefe
+
+- Ewfewfew
 ## v1.5.0 - 2025-05-20
 
 
