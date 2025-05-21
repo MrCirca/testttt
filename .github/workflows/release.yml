@@ -20,7 +20,6 @@ jobs:
         with:
           fetch-depth: 0
 
-
       - name: Set up git-cliff
         uses: kenji-miyake/setup-git-cliff@v1
 
@@ -36,13 +35,16 @@ jobs:
           VERSION=$(git cliff --config=cliff.toml --bumped-version)
           echo "new_tag=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Generate changelog for this version
+        run: |
+          git cliff --config=cliff.toml --tag ${{ steps.new_tag.outputs.new_tag }} > CHANGELOG.md
 
-      - name: Create GitHub Release with generated notes
+      - name: Create GitHub Release with changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create ${{ steps.new_tag.outputs.new_tag }} \
-            --generate-notes \
             --title "Release ${{ steps.new_tag.outputs.new_tag }}" \
+            --notes-file CHANGELOG.md \
             --repo ${{ github.repository }}
 
