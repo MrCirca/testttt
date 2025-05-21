@@ -1,6 +1,6 @@
 on:
   workflow_run:
-    workflows: ["Generate Changelog"]
+    workflows: ["Generate Changelog on Merge"]
     types:
       - completed
 
