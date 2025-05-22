@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v1.7.0 - 2025-05-22
+
+
+
+- Feat: allow provided config object to extend other configs
 ## v1.6.5 - 2025-05-22
 
 
