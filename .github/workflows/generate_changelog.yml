@@ -17,11 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up git-cliff
@@ -45,8 +41,13 @@ jobs:
           set +e
           git add CHANGELOG.md
           git commit -m "Update changelog"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git ${{ steps.detect_branch.outputs.default_branch }}
-
+          
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.detect_branch.outputs.default_branch }}
+          
       - name: Create GitHub Release with changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
