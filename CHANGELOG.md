@@ -1,11 +1,18 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v1.7.9 - 2025-05-29
+
+
+
+- Update generate_changelog.yml
 ## v1.7.8 - 2025-05-29
 
 
 
 - Update changelog for release v1.7.7
+
+- Update changelog for release v1.7.8
 ## v1.7.7 - 2025-05-29
 
 
