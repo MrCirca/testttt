@@ -1,4 +1,4 @@
-name: Generate Changelog and Release (Merge Queue)
+name: Release via Merge Queue
 
 on:
   merge_group:
@@ -8,17 +8,19 @@ permissions:
   pull-requests: write
 
 jobs:
-  changelog:
+  generate-release:
+    if: github.event_name == 'merge_group'
+    name: Build Release on Merge Queue
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout with SSH key
+      - name: Checkout with SSH deploy key
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-      - name: Set up Git user
+      - name: Set up Git config
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -26,7 +28,7 @@ jobs:
       - name: Install git-cliff
         uses: kenji-miyake/setup-git-cliff@v1
 
-      - name: Get next version
+      - name: Get bumped version
         id: bump
         run: |
           VERSION=$(git cliff --config=cliff.toml --bumped-version)
@@ -36,7 +38,7 @@ jobs:
         run: |
           git cliff --config=cliff.toml --tag ${{ steps.bump.outputs.new_tag }} > CHANGELOG.md
 
-      - name: Commit and push CHANGELOG
+      - name: Commit and push changelog
         run: |
           git add CHANGELOG.md
           git commit -m "skip ci: update changelog for ${{ steps.bump.outputs.new_tag }}"
