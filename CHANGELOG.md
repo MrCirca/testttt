@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v1.7.1 - 2025-05-29
+
+
+
+- Update ff.yml
+
+- Update generate_changelog.yml
+
+- Update demo.txt
+
+- Update generate_changelog.yml
 ## v1.7.0 - 2025-05-22
 
 
