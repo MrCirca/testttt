@@ -1,56 +1,52 @@
-name: Generate Changelog and Release Version on Merge
+name: Generate Changelog and Release (Merge Queue)
 
 on:
-  push:
-    branches:
-      - main
+  merge_group:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   changelog:
-    name: Generate changelog and release
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout with SSH key
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-      - name: Set up git user
+      - name: Set up Git user
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Set up git-cliff
+      - name: Install git-cliff
         uses: kenji-miyake/setup-git-cliff@v1
 
-      - name: Bump release version
-        id: new_tag
+      - name: Get next version
+        id: bump
         run: |
           VERSION=$(git cliff --config=cliff.toml --bumped-version)
           echo "new_tag=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog
+      - name: Generate CHANGELOG.md
         run: |
-          git cliff --config=cliff.toml --tag ${{ steps.new_tag.outputs.new_tag }} > CHANGELOG.md
+          git cliff --config=cliff.toml --tag ${{ steps.bump.outputs.new_tag }} > CHANGELOG.md
 
-      - name: Commit and push changelog
+      - name: Commit and push CHANGELOG
         run: |
           git add CHANGELOG.md
-          git commit -m "Update changelog for release ${{ steps.new_tag.outputs.new_tag }}"
+          git commit -m "skip ci: update changelog for ${{ steps.bump.outputs.new_tag }}"
           git push origin main
 
-      - name: Create GitHub Release with changelog
+      - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ steps.new_tag.outputs.new_tag }} \
-            --title "Release ${{ steps.new_tag.outputs.new_tag }}" \
+          gh release create ${{ steps.bump.outputs.new_tag }} \
+            --title "Release ${{ steps.bump.outputs.new_tag }}" \
             --notes-file CHANGELOG.md \
             --repo ${{ github.repository }}
-
