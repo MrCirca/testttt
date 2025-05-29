@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - Update demo.txt
 
 - Update generate_changelog.yml
+
+- Update changelog for release v1.7.1
 ## v1.7.0 - 2025-05-22
 
 
