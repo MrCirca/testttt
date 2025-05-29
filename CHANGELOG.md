@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v1.7.10 - 2025-05-29
+
+
+
+- Update changelog for release v1.7.9
 ## v1.7.9 - 2025-05-29
 
 
