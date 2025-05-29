@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 
 - Update generate_changelog.yml
+
+- Update changelog for release v1.7.9
 ## v1.7.8 - 2025-05-29
 
 
