@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 
 - Update changelog for release v1.7.5
+
+- Update changelog for release v1.7.6
 ## v1.7.5 - 2025-05-29
 
 
