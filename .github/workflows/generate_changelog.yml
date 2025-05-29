@@ -10,15 +10,20 @@ permissions:
 
 jobs:
   changelog:
-    name: Generate changelog
+    name: Generate changelog and release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           fetch-depth: 0
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Set up git user
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
 
       - name: Set up git-cliff
         uses: kenji-miyake/setup-git-cliff@v1
@@ -29,25 +34,16 @@ jobs:
           VERSION=$(git cliff --config=cliff.toml --bumped-version)
           echo "new_tag=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog for this version
+      - name: Generate changelog
         run: |
           git cliff --config=cliff.toml --tag ${{ steps.new_tag.outputs.new_tag }} > CHANGELOG.md
 
       - name: Commit and push changelog
         run: |
-          git checkout ${{ steps.detect_branch.outputs.default_branch }}
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          set +e
           git add CHANGELOG.md
-          git commit -m "Update changelog"
-          
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.detect_branch.outputs.default_branch }}
-          
+          git commit -m "Update changelog for release ${{ steps.new_tag.outputs.new_tag }}"
+          git push origin main
+
       - name: Create GitHub Release with changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
